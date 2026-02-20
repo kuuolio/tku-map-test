@@ -41,6 +41,7 @@
         <script src="js/leaflet.photon.js"></script>
         <script src="data/Uusitilastoaluejakov2_1.js"></script>
         <script src="data/Uusisuuralulejakov2dissolved_2.js"></script>
+		<script src="data/raitiotie_1.js"></script>
         <script>
         var map = L.map('map', {
             zoomControl:false, maxZoom:28, minZoom:1
@@ -299,6 +300,12 @@
         });
         bounds_group.addLayer(layer_Uusisuuralulejakov2dissolved_2);
         map.addLayer(layer_Uusisuuralulejakov2dissolved_2);
+		var layer_raitiotie = new L.geoJson(json_raitiotie_1, {
+			style: {
+				color: "white"
+			}
+		});
+		map.addLayer(layer_raitiotie);
         setBounds();
         </script>        
     </body>
