@@ -13,33 +13,62 @@
         <link rel="stylesheet" href="css/leaflet.photon.css">
         <style>
         html, body {
-			width: 100%;
-			padding: 0;
-			margin: 0;
-		}
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
 
-		#map {
-			width: 800px;
-			height: 600px;
-		}
-		.info {
-			width:220px;
-			min-height: 50px;
-			padding: 6px 8px;
-			font: 14px/16px Arial, Helvetica, sans-serif;
-			background: rgba(255,255,255,0.9);
-			box-shadow: 0 0 15px rgba(0,0,0,0.2);
-			border-radius: 5px;
-		}
-		.info h4 {
-			margin: 0 0 5px;
-			color: #777;
-		}
+        /* Map area sized to 800x600 and positioned relative so dialog can sit inside */
+        #map {
+            width: 800px;
+            height: 600px;
+            position: relative;
+        }
+
+        .info {
+            width:220px;
+            min-height: 50px;
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: rgba(255,255,255,0.9);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+        .info h4 {
+            margin: 0 0 5px;
+            color: #777;
+        }
+
+        /* Layer-selection dialog */
+        .layer-dialog {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            background: rgba(255,255,255,0.95);
+            padding: 8px 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            z-index: 1000;
+        }
+        .layer-dialog label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 4px 0;
+        }
         </style>
         <title></title>
     </head>
     <body>
         <div id="map">
+            <div class="layer-dialog" id="layerDialog">
+                <div style="font-weight:bold; margin-bottom:6px;">Karttamuuttujan valinta</div>
+                <label><input type="checkbox" id="chkKoulu" checked> Koulu</label>
+                <label><input type="checkbox" id="chkPaiv" checked> Päiväkoti</label>
+                <label><input type="checkbox" id="chkRaiti" checked> Raitiotie</label>
+            </div>
         </div>
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
@@ -55,6 +84,7 @@
         <script src="data/Uusitilastoaluejakov2_1.js"></script>
         <script src="data/Uusisuuralulejakov2dissolved_2.js"></script>
 		<script src="data/raitiotie_1.js"></script>
+        <script src="data/koulutkoord_1.js"></script>
         <script>
         var map = L.map('map', {
             zoomControl:false, maxZoom:28, minZoom:1
@@ -281,6 +311,7 @@
 							weight: 3,
 							color: '#e0e0e0'
 						});
+						layer.bringToFront();
 
 						info.update(layer.feature.properties);
 					},
@@ -345,7 +376,7 @@
             dataVar: 'json_Uusisuuralulejakov2dissolved_2',
             layerName: 'layer_Uusisuuralulejakov2dissolved_2',
             pane: 'pane_Uusisuuralulejakov2dissolved_2',
-            <!-- onEachFeature: pop_Uusisuuralulejakov2dissolved_2, -->
+            // onEachFeature: pop_Uusisuuralulejakov2dissolved_2,
             style: style_Uusisuuralulejakov2dissolved_2_0,
         });
         bounds_group.addLayer(layer_Uusisuuralulejakov2dissolved_2);
@@ -356,7 +387,150 @@
 			}
 		});
 		map.addLayer(layer_raitiotie);
-        setBounds();
+
+		// --- koulutkoord layer (points) ---
+		function pop_koulutkoord_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Yksikkö'] !== null ? autolinker.link(String(feature.properties['Yksikkö']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Osoite</th>\
+                        <td>' + (feature.properties['Osoite'] !== null ? autolinker.link(String(feature.properties['Osoite']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['lat'] !== null ? autolinker.link(String(feature.properties['lat']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['long'] !== null ? autolinker.link(String(feature.properties['long']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tyyppi_2'] !== null ? autolinker.link(String(feature.properties['tyyppi_2']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+            layer.on('popupopen', function(e) {
+                addClassToPopupIfMedia(content, e.popup);
+            });
+            layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_koulutkoord_1_0(feature) {
+            switch(String(feature.properties['tyyppi_2'])) {
+                case 'Päiväkoti':
+                    return {
+                pane: 'pane_koulutkoord_1',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(229,63,51,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Koulu':
+                    return {
+                pane: 'pane_koulutkoord_1',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(50,87,128,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 2.0,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(72,123,182,1.0)',
+                interactive: true,
+            }
+                    break;
+                default:
+                    return {
+                pane: 'pane_koulutkoord_1',
+                radius: 6.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(0,0,0,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+
+        map.createPane('pane_koulutkoord_1');
+        map.getPane('pane_koulutkoord_1').style.zIndex = 410;
+        map.getPane('pane_koulutkoord_1').style['mix-blend-mode'] = 'normal';
+        var layer_koulutkoord_1 = new L.geoJson(json_koulutkoord_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_koulutkoord_1',
+            layerName: 'layer_koulutkoord_1',
+            pane: 'pane_koulutkoord_1',
+            onEachFeature: pop_koulutkoord_1,
+            pointToLayer: function (feature, latlng) {
+                return L.circleMarker(latlng, style_koulutkoord_1_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_koulutkoord_1);
+        map.addLayer(layer_koulutkoord_1);
+        layer_koulutkoord_1.bringToFront();
+
+		setBounds();
+
+        // Layer dialog handlers
+        (function() {
+            var chkK = document.getElementById('chkKoulu');
+            var chkP = document.getElementById('chkPaiv');
+            var chkR = document.getElementById('chkRaiti');
+
+            function toggleKoulu(show) {
+                if (!layer_koulutkoord_1) return;
+                layer_koulutkoord_1.eachLayer(function(l) {
+                    if (l.feature && l.feature.properties && String(l.feature.properties['tyyppi_2']) === 'Koulu') {
+                        l.setStyle({opacity: show ? 1 : 0, fillOpacity: show ? 1 : 0});
+                        l.options.interactive = !!show;
+                    }
+                });
+            }
+
+            function togglePaiv(show) {
+                if (!layer_koulutkoord_1) return;
+                layer_koulutkoord_1.eachLayer(function(l) {
+                    if (l.feature && l.feature.properties && String(l.feature.properties['tyyppi_2']) === 'Päiväkoti') {
+                        l.setStyle({opacity: show ? 1 : 0, fillOpacity: show ? 1 : 0});
+                        l.options.interactive = !!show;
+                    }
+                });
+            }
+
+            function toggleRaitiotie(show) {
+                if (!layer_raitiotie) return;
+                try {
+                    layer_raitiotie.setStyle({opacity: show ? 1 : 0});
+                    if (show) map.addLayer(layer_raitiotie); else map.removeLayer(layer_raitiotie);
+                } catch (e) {}
+            }
+
+            chkK.addEventListener('change', function() { toggleKoulu(this.checked); });
+            chkP.addEventListener('change', function() { togglePaiv(this.checked); });
+            chkR.addEventListener('change', function() { toggleRaitiotie(this.checked); });
+
+            // initialize states
+            toggleKoulu(chkK.checked);
+            togglePaiv(chkP.checked);
+            toggleRaitiotie(chkR.checked);
+        })();
         </script>        
     </body>
 </html>
