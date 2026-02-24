@@ -22,6 +22,17 @@
 			width: 800px;
 			height: 600px;
 		}
+		.info {
+			padding: 6px 8px;
+			font: 14px/16px Arial, Helvetica, sans-serif;
+			background: rgba(255,255,255,0.9);
+			box-shadow: 0 0 15px rgba(0,0,0,0.2);
+			border-radius: 5px;
+		}
+		.info h4 {
+			margin: 0 0 5px;
+			color: #777;
+		}
         </style>
         <title></title>
     </head>
@@ -46,6 +57,24 @@
         var map = L.map('map', {
             zoomControl:false, maxZoom:28, minZoom:1
         }).fitBounds([[60.25014132364528,21.675946132050917],[60.76954715295079,23.290971291961956]]);
+		// Hover info control
+		var info = L.control({ position: 'topright' });
+
+		info.onAdd = function (map) {
+			this._div = L.DomUtil.create('div', 'info');
+			this.update();
+			return this._div;
+		};
+
+		info.update = function (props) {
+			this._div.innerHTML = props
+				? '<h4>Alue Info</h4>'
+				  + '<b>' + props['Aluejako [versio 2]_Uusi Tilastoalue'] + '</b><br/>'
+				  + 'Väestö: ' + props['2024_vaesto_uusi_aluejako_Väestö 31.12.']
+				: 'Hover over an area';
+		};
+
+		info.addTo(map);
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
@@ -235,14 +264,33 @@
         map.getPane('pane_Uusitilastoaluejakov2_1').style.zIndex = 401;
         map.getPane('pane_Uusitilastoaluejakov2_1').style['mix-blend-mode'] = 'multiply';
         var layer_Uusitilastoaluejakov2_1 = new L.geoJson(json_Uusitilastoaluejakov2_1, {
-            attribution: '',
-            interactive: true,
-            dataVar: 'json_Uusitilastoaluejakov2_1',
-            layerName: 'layer_Uusitilastoaluejakov2_1',
-            pane: 'pane_Uusitilastoaluejakov2_1',
-            onEachFeature: pop_Uusitilastoaluejakov2_1,
-            style: style_Uusitilastoaluejakov2_1_0,
-        });
+			attribution: '',
+			interactive: true,
+			dataVar: 'json_Uusitilastoaluejakov2_1',
+			layerName: 'layer_Uusitilastoaluejakov2_1',
+			pane: 'pane_Uusitilastoaluejakov2_1',
+			onEachFeature: function(feature, layer) {
+
+				layer.on({
+					mouseover: function(e) {
+						var layer = e.target;
+
+						layer.setStyle({
+							weight: 3,
+							color: '#666'
+						});
+
+						info.update(layer.feature.properties);
+					},
+					mouseout: function(e) {
+						layer_Uusitilastoaluejakov2_1.resetStyle(e.target);
+						info.update();
+					}
+				});
+
+			},
+			style: style_Uusitilastoaluejakov2_1_0,
+		});
         bounds_group.addLayer(layer_Uusitilastoaluejakov2_1);
         map.addLayer(layer_Uusitilastoaluejakov2_1);
         function pop_Uusisuuralulejakov2dissolved_2(feature, layer) {
@@ -295,7 +343,7 @@
             dataVar: 'json_Uusisuuralulejakov2dissolved_2',
             layerName: 'layer_Uusisuuralulejakov2dissolved_2',
             pane: 'pane_Uusisuuralulejakov2dissolved_2',
-            onEachFeature: pop_Uusisuuralulejakov2dissolved_2,
+            <!-- onEachFeature: pop_Uusisuuralulejakov2dissolved_2, -->
             style: style_Uusisuuralulejakov2dissolved_2_0,
         });
         bounds_group.addLayer(layer_Uusisuuralulejakov2dissolved_2);
