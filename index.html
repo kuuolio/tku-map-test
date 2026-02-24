@@ -23,6 +23,8 @@
 			height: 600px;
 		}
 		.info {
+			width:220px;
+			min-height: 50px;
 			padding: 6px 8px;
 			font: 14px/16px Arial, Helvetica, sans-serif;
 			background: rgba(255,255,255,0.9);
@@ -68,9 +70,9 @@
 
 		info.update = function (props) {
 			this._div.innerHTML = props
-				? '<h4>Alue Info</h4>'
-				  + '<b>' + props['Aluejako [versio 2]_Uusi Tilastoalue'] + '</b><br/>'
-				  + 'Väestö: ' + props['2024_vaesto_uusi_aluejako_Väestö 31.12.']
+				? '<h4>'+props['Aluejako [versio 2]_Uusi Tilastoalue']+'</h4>'
+				  + props['Aluejako [versio 2]_Uusi Suuralue'] + '<br/><br/>'
+				  + '<b>Väestö:</b> ' + props['2024_vaesto_uusi_aluejako_Väestö 31.12.']
 				: 'Hover over an area';
 		};
 
@@ -277,7 +279,7 @@
 
 						layer.setStyle({
 							weight: 3,
-							color: '#666'
+							color: '#e0e0e0'
 						});
 
 						info.update(layer.feature.properties);
